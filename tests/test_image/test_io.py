@@ -28,6 +28,7 @@ class TestIO:
         cls.gray_img_dim3_path = osp.join(cls.data_dir, 'grayscale_dim3.jpg')
         cls.gray_alpha_img_path = osp.join(cls.data_dir, 'gray_alpha.png')
         cls.palette_img_path = osp.join(cls.data_dir, 'palette.gif')
+        cls.npy_path = osp.join(cls.data_dir, 'image.npy')
         cls.exif_img_path = osp.join(cls.data_dir, 'color_exif.jpg')
         cls.img = cv2.imread(cls.img_path)
         cls.tiff_path = osp.join(cls.data_dir, 'uint16-5channel.tif')
@@ -226,6 +227,13 @@ class TestIO:
         assert img_tifffile.shape == (200, 150, 5)
 
         mmcv.use_backend('cv2')
+
+        # backend numpy
+        mmcv.use_backend('numpy')
+        img_npy = mmcv.imread(self.npy_path)
+        assert img_npy.shape == (300, 300)
+        img_npy_usebackend = mmcv.imread(self.npy_path, backend='numpy')
+        assert_array_equal(img_npy_usebackend, img_npy)
 
         # consistent exif behaviour
         img_cv2_exif = mmcv.imread(self.exif_img_path)

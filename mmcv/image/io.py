@@ -28,7 +28,7 @@ except ImportError:
     tifffile = None
 
 jpeg = None
-supported_backends = ['cv2', 'turbojpeg', 'pillow', 'tifffile']
+supported_backends = ['cv2', 'turbojpeg', 'pillow', 'tifffile', 'numpy']
 
 imread_flags = {
     'color': IMREAD_COLOR,
@@ -163,7 +163,7 @@ def imread(img_or_path,
             The `turbojpeg` backend only supports `color` and `grayscale`.
         channel_order (str): Order of channel, candidates are `bgr` and `rgb`.
         backend (str | None): The image decoding backend type. Options are
-            `cv2`, `pillow`, `turbojpeg`, `tifffile`, `None`.
+            `cv2`, `pillow`, `turbojpeg`, `tifffile`, `numpy`, `None`.
             If backend is None, the global imread_backend specified by
             ``mmcv.use_backend()`` will be used. Default: None.
         file_client_args (dict | None): Arguments to instantiate a
@@ -181,6 +181,10 @@ def imread(img_or_path,
         ...     backend='cv2')
         >>> img = mmcv.imread(img_path, flag='color', channel_order='bgr',
         ...     backend='pillow')
+        >>> # load image data from numpy array
+        >>> npy_img_path = '/path/to/img.npy'
+        >>> img = mmcv.imread(npy_img_path)
+        >>> # petrel path
         >>> s3_img_path = 's3://bucket/img.jpg'
         >>> # infer the file backend by the prefix s3
         >>> img = mmcv.imread(s3_img_path)
@@ -199,9 +203,13 @@ def imread(img_or_path,
     if isinstance(img_or_path, np.ndarray):
         return img_or_path
     elif is_str(img_or_path):
-        file_client = FileClient.infer_client(file_client_args, img_or_path)
-        img_bytes = file_client.get(img_or_path)
-        return imfrombytes(img_bytes, flag, channel_order, backend)
+        if backend == 'numpy' or \
+            (backend is None and osp.splitext(img_or_path)[-1] == '.npy'):
+            return np.load(img_or_path)
+        else:
+            file_client = FileClient.infer_client(file_client_args, img_or_path)
+            img_bytes = file_client.get(img_or_path)
+            return imfrombytes(img_bytes, flag, channel_order, backend)
     else:
         raise TypeError('"img" must be a numpy array or a str or '
                         'a pathlib.Path object')
